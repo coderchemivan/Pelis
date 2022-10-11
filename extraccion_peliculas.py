@@ -156,12 +156,21 @@ class Imdb (CrawlSpider):
             continue
 
         '''plot'''
-
         try:
-            plot_ = sel.xpath("//*[@class='ipc-html-content-inner-div']/text()")
-            item.add_value('plot',plot_.get())
+            links = sel.xpath("//body//a/@href").getall()
+            posibles_links_de_reparto = re.findall('(tt\d{7,11})',''.join(links))
+            link_plot = 'https://www.imdb.com/title/'+posibles_links_de_reparto[0]+'/plotsummary?ref_=tt_stry_pl'
+            r = requests.get(link_plot)
+            soup = BeautifulSoup(r.text, 'html.parser')
+
+            plot = soup.find_all('li', attrs={'class':'ipl-zebra-list__item'})[1].text
+
+            #dividir el texto en saltos de linea
+            plot = plot.strip().split('\n')[0]
+            item.add_value('plot',plot)
         except:
             item.add_value('plot','ND')
+        
 
         '''reparto'''
         try:
