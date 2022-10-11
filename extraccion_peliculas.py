@@ -1,3 +1,5 @@
+from attr import attrs
+import requests
 from scrapy.item import Field
 from scrapy.item import Item
 from scrapy.spiders import CrawlSpider, Rule
@@ -6,7 +8,8 @@ from scrapy.linkextractors import LinkExtractor
 from scrapy.loader import ItemLoader
 import pandas as pd
 
-
+from bs4 import BeautifulSoup
+import re
 
 # df = pd.read_json('files/titulos1.json').astype(str)
 # df = df.iloc[:, 0]
@@ -21,6 +24,7 @@ class Opinion(Item):
     director = Field()
     guionista = Field()
     year = Field()
+    estreno = Field()
     duracion = Field()
     rating = Field()
     budget = Field()
@@ -28,7 +32,7 @@ class Opinion(Item):
     plot = Field()
     cast = Field()
     personajes = Field()
-    estreno = Field()
+    
     
 
 
@@ -53,11 +57,6 @@ class Imdb (CrawlSpider):
     download_delay = 1
 
     rules = (
-        # Rule( #Extracción de generos
-        #     LinkExtractor(
-        #         allow=r'genres=.+&title_type=feature&explore'
-        #     ), follow=True),
-
         Rule(#Paginación de peliculas
             LinkExtractor(
                 allow=r'adv_nxt'
@@ -69,12 +68,6 @@ class Imdb (CrawlSpider):
                 allow =r'/title/tt\d+',
                 restrict_xpaths=["//*[@class='lister-list']/div/div/h3/a"]
             ), follow=True,callback='parse_titles'),
-        
-        Rule(#Reparto
-            LinkExtractor(
-                allow =r'fullcredits',
-
-        ),follow=True,callback='parse_cast')  
         )
     
     
@@ -141,10 +134,10 @@ class Imdb (CrawlSpider):
 
         '''estrenada'''
         try:
-            estreno = sel.xpath("//*[@data-testid='tm-box-up-date']/text()").get()
+            estreno = sel.xpath("//*[@data-testid='tm-box-up-date']/text()")[0].get()
             item.add_value('estreno',estreno)
         except:
-            item.add_value('estreno','0')
+            item.add_value('estreno',0)
 
 
         '''director'''
@@ -153,7 +146,6 @@ class Imdb (CrawlSpider):
         director_count = 0
         for i in range(len(posibles_contenedores)):
             direccion = posibles_contenedores[i].xpath('.//span/text()').get()
-            print(direccion,i)
             if direccion =="Director":
                 director_count+=1
                 if director_count ==3:
@@ -162,9 +154,33 @@ class Imdb (CrawlSpider):
                     for director in directores:
                         item.add_value('director',director.get())
             continue
+
+        '''plot'''
         
-        #    item.add_value('director','ND')
-        
+        plot_ = sel.xpath("//*[@class='sc-132205f7-0 bJEfgD']/div/div/div/text()")
+        print(plot_,'_______________________________________________________________________')
+        item.add_value('plot',plot_.get())
+
+        '''reparto'''
+        try:
+            reparto = sel.xpath("//*[@class='ipc-metadata-list-item__icon-link']/@href").getall()
+            posibles_links_de_reparto = re.findall('(/title/tt\d{7,11}/fullcredits/\?ref_=tt_cl_sm)',''.join(reparto))
+            link_reparto= 'https://www.imdb.com/'+posibles_links_de_reparto[0]
+            r = requests.get(link_reparto)
+            soup = BeautifulSoup(r.text, 'html.parser')
+            writing = soup.find_all('table', attrs={'class':'simpleTable simpleCreditsTable'})
+            writers = writing[1].find_all('a')
+            credit_papel = writing[1].find_all('td',attrs={'class':'credit'})
+            writing_credits = {}
+            c =0	
+            for writer in writers:
+                writing_credits[credit_papel[c].text.strip().replace('(','').replace(')','').replace('&','')] = writer.text.strip()
+                c+=1
+            print(writing_credits)
+            item.add_value('guionista',writing_credits)
+        except:
+            item.add_value('guionista','ND')
+                
         '''budget'''
         try:
             budget = sel.xpath("//*[@class='ipc-metadata-list__item sc-6d4f3f8c-2 fJEELB']/div/ul/li/span/text()")[0].get()
@@ -198,19 +214,14 @@ class Imdb (CrawlSpider):
             item.add_value('personajes', 'ND')
 
 
-        '''plot'''
-        try:
-            plot_ = sel.xpath("//*[@class='sc-132205f7-0 bJEfgD']/div/div/div/text()").get()
-            item.add_value('plot',plot_)
-        except:
-            item.add_value('plot', 'ND')
+
+        
+            #item.add_value('plot', 'ND')
         yield item.load_item() 
 
-    def parse_cast(self, response):
-        sel  = Selector(response)
-        item = ItemLoader(Opinion(),sel)
-        print('___________________')
-        print('___________________')
 
-#scrapy runspider prueba.py -o files/titulos1.json -t json
+    def parse_cast(self, response):pass
+
+
+#scrapy runspider extraccion_peliculas.py -o files/titulos1.json -t json
 
