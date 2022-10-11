@@ -156,10 +156,12 @@ class Imdb (CrawlSpider):
             continue
 
         '''plot'''
-        
-        plot_ = sel.xpath("//*[@class='sc-132205f7-0 bJEfgD']/div/div/div/text()")
-        print(plot_,'_______________________________________________________________________')
-        item.add_value('plot',plot_.get())
+
+        try:
+            plot_ = sel.xpath("//*[@class='ipc-html-content-inner-div']/text()")
+            item.add_value('plot',plot_.get())
+        except:
+            item.add_value('plot','ND')
 
         '''reparto'''
         try:
