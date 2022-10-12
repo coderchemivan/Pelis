@@ -1,10 +1,34 @@
 import scrapy
 from scrapy.selector import Selector
 import re
+import pandas as pd
+
+
+
+class AbrirJsonFiles():
+    def __init__(self, filename):
+        self.filename = filename
+    
+    def read_json(self):
+        with open(r'C:\Users\ivan_\OneDrive - UNIVERSIDAD NACIONAL AUTÓNOMA DE MÉXICO\Desktop\repositorios\Pelis\files/{file}.json'.format(file = self.filename), 
+        encoding='utf-8') as file:
+            df = pd.read_json(file).astype(str)
+
+        df = df.iloc[:, 0]
+        df = df.apply(lambda x: x[2:len(x)-2])
+        ids = df.tolist()
+        return ids
+
+
+
 
 class Peliculas_direccion(scrapy.Spider):
     name = 'movies_direccion'
-    start_urls = ['https://www.imdb.com/title/tt2562232/fullcredits/?ref_=tt_cl_sm']
+    
+    file = input()
+    ids = AbrirJsonFiles(file).read_json()
+    
+    start_urls = ['https://www.imdb.com/title/{id}/fullcredits/?ref_=tt_cl_sm'.format(id=id) for id in ids]
 
     def parse(self, response):
         sel  = Selector(response)
@@ -18,7 +42,9 @@ class Peliculas_direccion(scrapy.Spider):
 
 class Peliculas_plot(scrapy.Spider):
     name = 'movies_plot'
-    start_urls = ['https://www.imdb.com/title/tt2562232/plotsummary?ref_=tt_stry_pl']
+    file = input()
+    ids = AbrirJsonFiles(file).read_json()
+    start_urls = ['https://www.imdb.com/title/{id}/plotsummary?ref_=tt_stry_pl'.format(id=id) for id in ids]
 
     def parse(self, response):
         sel  = Selector(response)
