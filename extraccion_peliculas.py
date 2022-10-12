@@ -19,17 +19,19 @@ import re
 
 
 class Opinion(Item):
+    id_imdb = Field()
     title = Field()
     genre = Field()
-    director = Field()
-    guionista = Field()
+    #director = Field()
+    #guionista = Field()
+    #plot = Field()
     year = Field()
     estreno = Field()
     duracion = Field()
     rating = Field()
     budget = Field()
     boxOffice_collection = Field()
-    plot = Field()
+    
     cast = Field()
     personajes = Field()
     
@@ -85,10 +87,11 @@ class Imdb (CrawlSpider):
         except:
             titulo = sel.xpath('//*[@data-testid="hero-title-block__title"]/text()')[0].get()
             
+        '''ID'''
+        links = sel.xpath("//*[@class='ipc-metadata-list-item__icon-link']/@href").getall()
+        id_imdb = re.findall('/title/(tt\d{7,11})/',''.join(links))[0]
+        item.add_value('id_imdb', id_imdb)      
         
-        
-        #print(titulo)
-        #if titulo not in df.values:
 
         '''Titulo'''
         item.add_value('title', titulo)
@@ -138,59 +141,6 @@ class Imdb (CrawlSpider):
             item.add_value('estreno',estreno)
         except:
             item.add_value('estreno',0)
-
-
-        '''director'''
-            #//*[@class='ipc-inline-list ipc-inline-list--show-dividers ipc-inline-list--inline ipc-metadata-list-item__list-content base'][1] me va a dar el director o guión
-        posibles_contenedores = sel.xpath("//*[@class='ipc-metadata-list__item']")
-        director_count = 0
-        for i in range(len(posibles_contenedores)):
-            direccion = posibles_contenedores[i].xpath('.//span/text()').get()
-            if direccion =="Director":
-                director_count+=1
-                if director_count ==3:
-                    directores_contenedor = sel.xpath("//*[@class='ipc-metadata-list__item']")[i]
-                    directores = directores_contenedor.xpath(".//div/ul/li/a/text()")
-                    for director in directores:
-                        item.add_value('director',director.get())
-            continue
-
-        '''plot'''
-        try:
-            links = sel.xpath("//body//a/@href").getall()
-            posibles_links_de_reparto = re.findall('(tt\d{7,11})',''.join(links))
-            link_plot = 'https://www.imdb.com/title/'+posibles_links_de_reparto[0]+'/plotsummary?ref_=tt_stry_pl'
-            r = requests.get(link_plot)
-            soup = BeautifulSoup(r.text, 'html.parser')
-
-            plot = soup.find_all('li', attrs={'class':'ipl-zebra-list__item'})[1].text
-
-            #dividir el texto en saltos de linea
-            plot = plot.strip().split('\n')[0]
-            item.add_value('plot',plot)
-        except:
-            item.add_value('plot','ND')
-        
-
-        '''reparto'''
-        try:
-            reparto = sel.xpath("//*[@class='ipc-metadata-list-item__icon-link']/@href").getall()
-            posibles_links_de_reparto = re.findall('(/title/tt\d{7,11}/fullcredits/\?ref_=tt_cl_sm)',''.join(reparto))
-            link_reparto= 'https://www.imdb.com/'+posibles_links_de_reparto[0]
-            r = requests.get(link_reparto)
-            soup = BeautifulSoup(r.text, 'html.parser')
-            writing = soup.find_all('table', attrs={'class':'simpleTable simpleCreditsTable'})
-            writers = writing[1].find_all('a')
-            credit_papel = writing[1].find_all('td',attrs={'class':'credit'})
-            writing_credits = {}
-            c =0	
-            for writer in writers:
-                writing_credits[credit_papel[c].text.strip().replace('(','').replace(')','').replace('&','')] = writer.text.strip()
-                c+=1
-            print(writing_credits)
-            item.add_value('guionista',writing_credits)
-        except:
-            item.add_value('guionista','ND')
                 
         '''budget'''
         try:
