@@ -22,9 +22,9 @@ class Opinion(Item):
     id_imdb = Field()
     title = Field()
     genre = Field()
-    #director = Field()
-    #guionista = Field()
-    #plot = Field()
+    director = Field()
+    guionista = Field()
+    plot = Field()
     year = Field()
     estreno = Field()
     duracion = Field()
@@ -175,9 +175,46 @@ class Imdb (CrawlSpider):
             item.add_value('personajes', 'ND')
 
 
+        '''director'''
+        link = 'https://www.imdb.com/title/{id_imdb}/fullcredits/?ref_=tt_cl_sm'.format(id_imdb=id_imdb)
+        response = requests.get(link)
+        sel = Selector(response)
+        try:
+            directores = [x.strip() for x in sel.xpath("//*[@id='fullcredits_content']//table[1]//td/a/text()").getall()]
+            directores_=[]
+            [directores_.append(director) for director in directores if director not in directores_]
+            item.add_value('director', directores_)
+        except:
+            item.add_value('director', 'ND')
 
-        
-            #item.add_value('plot', 'ND')
+        try:
+            guionistas = [x.strip() for x in sel.xpath("//*[@id='fullcredits_content']//table[2]//td/a/text()").getall()]
+            papel_guionista = [x.strip() for x in sel.xpath("//*[@id='fullcredits_content']//table[2]//td[@class='credit']/text()").getall()]
+            guionistas_=[]
+            [guionistas_.append(guionista) for guionista in guionistas if guionista not in guionistas_]
+            papel_guionista_ = []
+            [papel_guionista_.append(papel) for papel in papel_guionista if papel not in papel_guionista_]
+            guionista = {papel_guionista_[i]:guionistas_[i] for i in range(len(guionistas_))}
+            item.add_value('guionista', guionista)
+        except:
+            item.add_value('guionista', 'ND')
+
+
+       
+        '''plot'''
+        link = 'https://www.imdb.com/title/{id_imdb}/plotsummary?ref_=tt_stry_pl'.format(id_imdb=id_imdb)
+        response = requests.get(link)
+        sel = Selector(response)
+        try:
+            plot = ''.join(sel.xpath("//*[@id='plot-summaries-content']/li[2]/p/text()").getall())
+            if plot == '':
+                plot = ''.join(sel.xpath("//*[@id='plot-summaries-content']/li[1]/p/text()").getall())
+            item.add_value('plot', plot)
+            item.add_value('director', directores)
+        except:
+            item.add_value('director', 'ND')
+
+     
         yield item.load_item() 
 
 
