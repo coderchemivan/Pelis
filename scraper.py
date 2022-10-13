@@ -33,6 +33,7 @@ class Pelis():
         soup = BeautifulSoup(r.text,'lxml')
         
         lista_tags_a_google = soup.find_all('a')[0:30]
+        print(lista_tags_a_google)
 
         link_movie = ''
         for tag_a in lista_tags_a_google:
@@ -42,7 +43,7 @@ class Pelis():
                 break
         r = requests.get(link_movie[0])
         soup = BeautifulSoup(r.text,'lxml')
-        print(link_movie[0],movie,año)
+        #print(link_movie[0],movie,año)
 
 
         '''Titulo'''
@@ -206,7 +207,7 @@ for pelicula,año in lista.items():
 with open('files/data1.json', 'w') as fp:
     json.dump(coleccion_pelis, fp)
 
-#peli.peliScraper('Memento',1)
+#peli.peliScraper('Memento',1,'2000')
 
 
 
