@@ -15,8 +15,6 @@ import os
 import json
 
 
-
-
 archivo = input('Ingrese el nombre del archivo: ')
 archivo = 'files/{archivo}.json'.format(archivo = archivo)
 contador_descargas = 0
@@ -26,8 +24,6 @@ if verificar_existencia_archivo == "s":
     df = df.iloc[:, 0]
     df = df.apply(lambda x: x[2:len(x)-2])
     #print(df)
-
-
 
 class Opinion(Item):
     id_imdb = Field()
