@@ -13,18 +13,19 @@ from bs4 import BeautifulSoup
 import re
 import os
 import json
+import numpy as np
 
 
 
 
-archivo = input('Ingrese el nombre del archivo: ')
-archivo = 'files/{archivo}.json'.format(archivo = archivo)
-contador_descargas = 0
+# archivo = input('Ingrese el nombre del archivo: ')
+# archivo = 'files/{archivo}.json'.format(archivo = archivo)
+# contador_descargas = 0
 verificar_existencia_archivo = input("¿Desea verificar la existencia de un archivo? (s/n): ")
-if verificar_existencia_archivo == "s":
-    df = pd.read_json(archivo).astype(str)
-    df = df.iloc[:, 0]
-    df = df.apply(lambda x: x[2:len(x)-2])
+# if verificar_existencia_archivo == "s":
+#     df = pd.read_json(archivo).astype(str)
+#     df = df.iloc[:, 0]
+#     df = df.apply(lambda x: x[2:len(x)-2])
     #print(df)
 
 
@@ -48,7 +49,7 @@ class Opinion(Item):
 class Imdb (CrawlSpider):
     name = "Imdb titles"
     custom_settings = {
-    'USER_AGENT': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/71.0.3578.80 Chrome/71.0.3578.80 Safari/537.36',
+    'USER_AGENT': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246',
     'CLOSESPIDER_PAGECOUNT': 30000         
     }
 
@@ -61,9 +62,12 @@ class Imdb (CrawlSpider):
 
     urls = [url.strip() for url in urls]
 
-    start_urls = [urls[2]]
+    start_urls = [urls[1]]
 
-    download_delay = 1
+    def truncate(n, decimals = 0): 
+        multiplier = 10 ** decimals 
+        return int(n * multiplier) / multiplier
+    download_delay = truncate(np.random.uniform(0.5,1),1)
 
     rules = (
         Rule(#Paginación de peliculas
@@ -198,5 +202,5 @@ class Imdb (CrawlSpider):
 
 
 
-#scrapy runspider extraccion_peliculas.py -o files/titulos2.json -t json
+#scrapy runspider extraccion_peliculas_load_items.py -o files/titulos2.json -t json
 
