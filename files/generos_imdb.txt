@@ -21,4 +21,4 @@ https://www.imdb.com//search/title?genres=sport&title_type=feature&explore=genre
 https://www.imdb.com//search/keyword?keywords=superhero&title_type=movie 
 https://www.imdb.com//search/title?genres=thriller&title_type=feature&explore=genres 
 https://www.imdb.com//search/title?genres=war&title_type=feature&explore=genres 
-https://www.imdb.com//search/title?genres=western&title_type=feature&explore=genres 
+https://www.imdb.com//search/title?genres=western&title_type=feature&explore=genres
