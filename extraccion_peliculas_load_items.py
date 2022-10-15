@@ -38,6 +38,11 @@ class Opinion(Item):
     estreno = Field()
     duracion = Field()
     rating = Field()
+    director = Field()
+    guionista = Field()
+    pais_de_origen = Field()
+    idiomas = Field()
+    plot = Field()
     budget = Field()
     boxOffice_collection = Field()
     cast = Field()
@@ -62,7 +67,7 @@ class Imdb (CrawlSpider):
 
     urls = [url.strip() for url in urls]
 
-    start_urls = [urls[1]]
+    start_urls = [urls[0]]
 
     def truncate(n, decimals = 0): 
         multiplier = 10 ** decimals 
@@ -95,7 +100,7 @@ class Imdb (CrawlSpider):
         id_imdb = re.findall('/title/(tt\d{7,11})/',''.join(links))[0]
         item.add_value('id_imdb', id_imdb)      
         
-        if verificar_existencia_archivo == "s" and id_imdb in df.values:
+        if verificar_existencia_archivo == "s" and id_imdb in df.values:  #'''Eliminar, ya que no necesito verificar la existencia de un archivo'''
             print('La película ya se encuentra en el archivo')        
         else:
             
@@ -141,6 +146,36 @@ class Imdb (CrawlSpider):
                 item.add_value('year','ND')
 
 
+            '''pais de origen'''
+            try:
+                contenedor_pais_de_origen = sel.xpath("//li[@class='ipc-metadata-list__item']/span/text()").getall()
+                for index in range(len(contenedor_pais_de_origen)):
+                    if contenedor_pais_de_origen[index] == 'Countries of origin' or contenedor_pais_de_origen[index] == 'Country of origin':
+                        pais_de_origen = sel.xpath("//li[@class='ipc-metadata-list__item']")[index]
+                        pais_de_origen = pais_de_origen.xpath(".//a/text()").getall()
+                        print(pais_de_origen)
+                        item.add_value('pais_de_origen',pais_de_origen)
+                        break
+            except:
+                item.add_value('pais_de_origen','ND')
+
+
+            '''Idiomas'''
+            try:
+                contenedor_idiomas = sel.xpath("//li[@class='ipc-metadata-list__item']/span/text()").getall()
+                for index in range(len(contenedor_idiomas)):
+                    if contenedor_idiomas[index] == 'Language' or contenedor_idiomas[index] == 'Languages':
+                        idiomas = sel.xpath("//li[@class='ipc-metadata-list__item']")[index]
+                        idiomas = idiomas.xpath(".//a/text()").getall()
+                        print(idiomas)
+                        item.add_value('idiomas',idiomas)
+                        break
+            except:
+                item.add_value('idiomas','ND')
+
+
+
+
             '''durcion'''
             try:
                 
@@ -148,7 +183,11 @@ class Imdb (CrawlSpider):
                 if duracion == []:
                     duracion = sel.xpath("//*[@class='sc-80d4314-2 iJtmbR']/ul/li[2]/text()").getall()
                 duracion = ''.join(duracion)
-                item.add_value('duracion',duracion)
+                if duracion!='':
+                
+                    item.add_value('duracion',duracion)
+                else:
+                    item.add_value('duracion','ND')
             except:
                 duracion = 'ND'
                 item.add_value('duracion','ND')
@@ -198,16 +237,22 @@ class Imdb (CrawlSpider):
             except:
                 characters = 'ND'
                 item.add_value('personajes', 'ND')
+
+            '''director'''
+            item.add_value('director', '')
+            '''guionista'''
+            item.add_value('guionista', '')
+            '''plot'''
+            item.add_value('plot', '')
+
+
+
+
             yield item.load_item() 
 
 
 
-#scrapy runspider extraccion_peliculas1.0.py -o files/titulos2.json -t json
-
-
-
-
-
+#scrapy runspider extraccion_peliculas_load_items.py -O files/titulos1.json
 
 
 
