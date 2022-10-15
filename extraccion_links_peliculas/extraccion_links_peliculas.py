@@ -3,6 +3,7 @@ import requests
 import re
 import numpy as np
 import pandas as pd
+import json
 
 class ExtraccionLinksPeliculas():
     def __init__ (self,archivo_links_generos):
@@ -47,6 +48,7 @@ class ExtraccionLinksPeliculas():
             for link in links:
                 genero_.append(genero)
                 links_peliculas.append(link.find('a').get('href').replace('title','').replace('/',''))
+                #with open(r'C:\Users\ivan_\OneDrive - UNIVERSIDAD NACIONAL AUTÓNOMA DE MÉXICO\Desktop\repositorios\Pelis\extraccion_links_peliculas\titles.json', "r") as file:
             c += 1
             link_pag_seiguiente = soup.find_all('div', class_='desc')
             
@@ -56,9 +58,13 @@ class ExtraccionLinksPeliculas():
                 print(c,link_pag_seiguiente)
             else:
                 break
-        pelicula_genero['genero'] = genero_
+        #pelicula_genero['genero'] = genero_
         pelicula_genero['link'] = links_peliculas
-        return pelicula_genero
+        #registrando pelicula_genero en un json que va a se usado para la extraccion de datos
+        #agregando el diccionario al archivo json
+        # 1. Read file contents
+
+        return links_peliculas
 
         
 
