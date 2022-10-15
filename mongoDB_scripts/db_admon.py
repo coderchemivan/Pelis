@@ -1,5 +1,8 @@
 import pymongo
 
+
+
+
 # Replace the uri string with your MongoDB deployment's connection string.
 
 class Admon_bd():
@@ -17,7 +20,6 @@ class Admon_bd():
         try:
             cliente = pymongo.MongoClient(self.conn_str, serverSelectionTimeoutMS=5000)
             cliente.server_info()
-            print("Coneccion a mongo exitosa")
             baseDatos=cliente[self.MONGO_BASEDATOS]
             coleccion=baseDatos[self.MONGO_COLECCION]
             cliente.close()
@@ -28,7 +30,6 @@ class Admon_bd():
         try:
             cliente = pymongo.MongoClient(self.conn_str, serverSelectionTimeoutMS=5000)
             cliente.server_info()
-            
             baseDatos=cliente[self.MONGO_BASEDATOS]
             coleccion=baseDatos[self.MONGO_COLECCION]
             coleccion.insert_one(documento)
@@ -37,7 +38,27 @@ class Admon_bd():
         except pymongo.errors.ServerSelectionTimeoutError as errorTiempo:
             print("Tiempo exedido "+errorTiempo)
 
-c = Admon_bd('cluster0','bleistift16','movies','premiosOscares')
-c.insertar_documeto(
-    {'Nominado_id': 'tt12299767', 'Año': '2022', 'Premio': 'Best Live Action Short Film', 'Nominado': 'Mi polla', 'Ganador': '1'} 
-    )
+
+    def find_(self,documento):
+        try:
+            cliente = pymongo.MongoClient(self.conn_str, serverSelectionTimeoutMS=5000)
+            cliente.server_info()
+            baseDatos=cliente[self.MONGO_BASEDATOS]
+            coleccion=baseDatos[self.MONGO_COLECCION]
+
+            encontrados = []
+            for documento_ in coleccion.find(documento):
+                encontrados.append(documento_)
+            if len(encontrados)>0:
+                print("Encontrado_____________________-")
+                return 1
+            else:
+                return 0
+            cliente.close()
+        except pymongo.errors.ServerSelectionTimeoutError as errorTiempo:
+            print("Tiempo exedido "+errorTiempo)
+
+
+
+
+
