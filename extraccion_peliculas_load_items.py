@@ -21,7 +21,7 @@ import numpy as np
 # archivo = input('Ingrese el nombre del archivo: ')
 # archivo = 'files/{archivo}.json'.format(archivo = archivo)
 # contador_descargas = 0
-verificar_existencia_archivo = input("¿Desea verificar la existencia de un archivo? (s/n): ")
+#verificar_existencia_archivo = input("¿Desea verificar la existencia de un archivo? (s/n): ")
 # if verificar_existencia_archivo == "s":
 #     df = pd.read_json(archivo).astype(str)
 #     df = df.iloc[:, 0]
@@ -100,159 +100,159 @@ class Imdb (CrawlSpider):
         id_imdb = re.findall('/title/(tt\d{7,11})/',''.join(links))[0]
         item.add_value('id_imdb', id_imdb)      
         
-        if verificar_existencia_archivo == "s" and id_imdb in df.values:  #'''Eliminar, ya que no necesito verificar la existencia de un archivo'''
-            print('La película ya se encuentra en el archivo')        
-        else:
+        #if verificar_existencia_archivo == "s" and id_imdb in df.values:  #'''Eliminar, ya que no necesito verificar la existencia de un archivo'''
+        #    print('La película ya se encuentra en el archivo')        
+        #else:
             
-            try:
-                titulo = sel.xpath('//*[@hero-title-block__original-title="hero-title-block__original-title"]/text()')[0].get()
-                
-            except:
-                titulo = sel.xpath('//*[@data-testid="hero-title-block__title"]/text()')[0].get()
-
-
-            '''Titulo'''
-            item.add_value('title', titulo)
+        try:
+            titulo = sel.xpath('//*[@hero-title-block__original-title="hero-title-block__original-title"]/text()')[0].get()
             
+        except:
+            titulo = sel.xpath('//*[@data-testid="hero-title-block__title"]/text()')[0].get()
+
+
+        '''Titulo'''
+        item.add_value('title', titulo)
+        
+        
+
+        '''genre'''
+        try:
+            genres = sel.xpath("//*[@class='ipc-chip__text']/text()")
+            generos = [genero.get() for genero in genres]
+            for genero in genres:
+                item.add_value('genre',genero.get())
+        except:
+            generos = 'ND'
+            item.add_value('genre','ND')
+
+
+        '''rating'''
+        try:
+            rating = sel.xpath("//*[@class='sc-7ab21ed2-1 jGRxWM']/text()")[1].get()
+            item.add_value('rating',rating)
+        except:
+            rating = 'ND'
+            item.add_value('rating', 'ND')
+
+
+
+        '''year'''
+        try:
+            year = sel.xpath("//*[@class='sc-8c396aa2-2 itZqyK']/text()")[0].get()
+            item.add_value('year',year)
+        except:
+            year = 'ND'
+            item.add_value('year','ND')
+
+
+        '''pais de origen'''
+        try:
+            contenedor_pais_de_origen = sel.xpath("//li[@class='ipc-metadata-list__item']/span/text()").getall()
+            for index in range(len(contenedor_pais_de_origen)):
+                if contenedor_pais_de_origen[index] == 'Countries of origin' or contenedor_pais_de_origen[index] == 'Country of origin':
+                    pais_de_origen = sel.xpath("//li[@class='ipc-metadata-list__item']")[index]
+                    pais_de_origen = pais_de_origen.xpath(".//a/text()").getall()
+                    print(pais_de_origen)
+                    item.add_value('pais_de_origen',pais_de_origen)
+                    break
+        except:
+            item.add_value('pais_de_origen','ND')
+
+
+        '''Idiomas'''
+        try:
+            contenedor_idiomas = sel.xpath("//li[@class='ipc-metadata-list__item']/span/text()").getall()
+            for index in range(len(contenedor_idiomas)):
+                if contenedor_idiomas[index] == 'Language' or contenedor_idiomas[index] == 'Languages':
+                    idiomas = sel.xpath("//li[@class='ipc-metadata-list__item']")[index]
+                    idiomas = idiomas.xpath(".//a/text()").getall()
+                    print(idiomas)
+                    item.add_value('idiomas',idiomas)
+                    break
+        except:
+            item.add_value('idiomas','ND')
+
+
+
+
+        '''durcion'''
+        try:
             
-
-            '''genre'''
-            try:
-                genres = sel.xpath("//*[@class='ipc-chip__text']/text()")
-                generos = [genero.get() for genero in genres]
-                for genero in genres:
-                    item.add_value('genre',genero.get())
-            except:
-                generos = 'ND'
-                item.add_value('genre','ND')
-
-
-            '''rating'''
-            try:
-                rating = sel.xpath("//*[@class='sc-7ab21ed2-1 jGRxWM']/text()")[1].get()
-                item.add_value('rating',rating)
-            except:
-                rating = 'ND'
-                item.add_value('rating', 'ND')
-
-
-
-            '''year'''
-            try:
-                year = sel.xpath("//*[@class='sc-8c396aa2-2 itZqyK']/text()")[0].get()
-                item.add_value('year',year)
-            except:
-                year = 'ND'
-                item.add_value('year','ND')
-
-
-            '''pais de origen'''
-            try:
-                contenedor_pais_de_origen = sel.xpath("//li[@class='ipc-metadata-list__item']/span/text()").getall()
-                for index in range(len(contenedor_pais_de_origen)):
-                    if contenedor_pais_de_origen[index] == 'Countries of origin' or contenedor_pais_de_origen[index] == 'Country of origin':
-                        pais_de_origen = sel.xpath("//li[@class='ipc-metadata-list__item']")[index]
-                        pais_de_origen = pais_de_origen.xpath(".//a/text()").getall()
-                        print(pais_de_origen)
-                        item.add_value('pais_de_origen',pais_de_origen)
-                        break
-            except:
-                item.add_value('pais_de_origen','ND')
-
-
-            '''Idiomas'''
-            try:
-                contenedor_idiomas = sel.xpath("//li[@class='ipc-metadata-list__item']/span/text()").getall()
-                for index in range(len(contenedor_idiomas)):
-                    if contenedor_idiomas[index] == 'Language' or contenedor_idiomas[index] == 'Languages':
-                        idiomas = sel.xpath("//li[@class='ipc-metadata-list__item']")[index]
-                        idiomas = idiomas.xpath(".//a/text()").getall()
-                        print(idiomas)
-                        item.add_value('idiomas',idiomas)
-                        break
-            except:
-                item.add_value('idiomas','ND')
-
-
-
-
-            '''durcion'''
-            try:
-                
-                duracion = sel.xpath("//*[@class='sc-80d4314-2 iJtmbR']/ul/li[3]/text()").getall()
-                if duracion == []:
-                    duracion = sel.xpath("//*[@class='sc-80d4314-2 iJtmbR']/ul/li[2]/text()").getall()
-                duracion = ''.join(duracion)
-                if duracion!='':
-                
-                    item.add_value('duracion',duracion)
-                else:
-                    item.add_value('duracion','ND')
-            except:
-                duracion = 'ND'
+            duracion = sel.xpath("//*[@class='sc-80d4314-2 iJtmbR']/ul/li[3]/text()").getall()
+            if duracion == []:
+                duracion = sel.xpath("//*[@class='sc-80d4314-2 iJtmbR']/ul/li[2]/text()").getall()
+            duracion = ''.join(duracion)
+            if duracion!='':
+            
+                item.add_value('duracion',duracion)
+            else:
                 item.add_value('duracion','ND')
+        except:
+            duracion = 'ND'
+            item.add_value('duracion','ND')
 
 
-            '''estrenada'''
-            try:
-                estreno = sel.xpath("//*[@data-testid='tm-box-up-date']/text()")[0].get()
-                item.add_value('estreno',estreno)
-            except:
-                estreno = 'ND'
-                item.add_value('estreno',0)
-                    
-            '''budget'''
-            try:
-                budget = sel.xpath("//*[@class='ipc-metadata-list__item sc-6d4f3f8c-2 fJEELB']/div/ul/li/span/text()")[0].get()
-                item.add_value('budget',budget)
-            except:
-                budget = 'ND'
-                item.add_value('budget', 'ND')
+        '''estrenada'''
+        try:
+            estreno = sel.xpath("//*[@data-testid='tm-box-up-date']/text()")[0].get()
+            item.add_value('estreno',estreno)
+        except:
+            estreno = 'ND'
+            item.add_value('estreno',0)
+                
+        '''budget'''
+        try:
+            budget = sel.xpath("//*[@class='ipc-metadata-list__item sc-6d4f3f8c-2 fJEELB']/div/ul/li/span/text()")[0].get()
+            item.add_value('budget',budget)
+        except:
+            budget = 'ND'
+            item.add_value('budget', 'ND')
 
 
-            '''recaudacion'''
-            try:
-                recaudacion = sel.xpath("//*[@class='ipc-metadata-list__item sc-6d4f3f8c-2 fJEELB']/div/ul/li/span/text()")[4].get()
-                item.add_value('boxOffice_collection',recaudacion)
-            except:
-                recaudacion = 'ND'
-                item.add_value('boxOffice_collection', 'ND')
+        '''recaudacion'''
+        try:
+            recaudacion = sel.xpath("//*[@class='ipc-metadata-list__item sc-6d4f3f8c-2 fJEELB']/div/ul/li/span/text()")[4].get()
+            item.add_value('boxOffice_collection',recaudacion)
+        except:
+            recaudacion = 'ND'
+            item.add_value('boxOffice_collection', 'ND')
 
-            '''cast'''
-            try:
-                cast = sel.xpath("//*[@data-testid='title-cast-item__actor']/text()")
-                casts = [actor.get() for actor in cast]
-                for actor in cast:
-                    item.add_value('cast', actor.get())
-            except:
-                casts = 'ND'
-                item.add_value('cast', 'ND')
+        '''cast'''
+        try:
+            cast = sel.xpath("//*[@data-testid='title-cast-item__actor']/text()")
+            casts = [actor.get() for actor in cast]
+            for actor in cast:
+                item.add_value('cast', actor.get())
+        except:
+            casts = 'ND'
+            item.add_value('cast', 'ND')
 
-            '''personajes'''
-            try:
-                chars = sel.xpath("//*[@data-testid='cast-item-characters-link']/span/text()")
-                characters = [char.get() for char in chars]
-                for char in chars:
-                    item.add_value('personajes', char.get())
-            except:
-                characters = 'ND'
-                item.add_value('personajes', 'ND')
+        '''personajes'''
+        try:
+            chars = sel.xpath("//*[@data-testid='cast-item-characters-link']/span/text()")
+            characters = [char.get() for char in chars]
+            for char in chars:
+                item.add_value('personajes', char.get())
+        except:
+            characters = 'ND'
+            item.add_value('personajes', 'ND')
 
-            '''director'''
-            item.add_value('director', '')
-            '''guionista'''
-            item.add_value('guionista', '')
-            '''plot'''
-            item.add_value('plot', '')
-
-
-
-
-            yield item.load_item() 
+        '''director'''
+        item.add_value('director', '')
+        '''guionista'''
+        item.add_value('guionista', '')
+        '''plot'''
+        item.add_value('plot', '')
 
 
 
-#scrapy runspider extraccion_peliculas_load_items.py -O files/titulos1.json
+
+        yield item.load_item() 
+
+
+
+#scrapy runspider extraccion_peliculas_load_items.py -O ..files/titulos1.json
 
 
 

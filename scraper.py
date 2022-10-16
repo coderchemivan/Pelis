@@ -1,15 +1,6 @@
 from logging import raiseExceptions
 from bs4 import BeautifulSoup
 import requests
-
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service as ChromeService
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from time import sleep
 import re
 import openpyxl
 import json
@@ -33,7 +24,7 @@ class Pelis():
         soup = BeautifulSoup(r.text,'lxml')
         
         lista_tags_a_google = soup.find_all('a')[0:30]
-        print(lista_tags_a_google)
+        
 
         link_movie = ''
         for tag_a in lista_tags_a_google:
@@ -126,7 +117,7 @@ class Pelis():
 
         r = requests.get(portada)
         if r.status_code == 200:
-            with open('portadas/{}_{}.jpg'.format(movie,año),'wb') as f:
+            with open('Application/files/portadas/{}_{}.jpg'.format(movie,año),'wb') as f:
                 f.write(r.content)
                 downloaded = True
 
@@ -144,45 +135,6 @@ class Pelis():
                 continue
         info_peli['cast'] = actores_principales
         return info_peli
-        # opts = Options()
-        # opts.add_argument(
-        #              "user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/71.0.3578.80 Chrome/71.0.3578.80 Safari/537.36")
-
-        # #driver = webdriver.Chrome('C:\Program Files (x86)\chromedriver_win32\chromedriver.exe', options=opts)
-
-        # driver = webdriver.Chrome(service=ChromeService(executable_path=ChromeDriverManager().install()))
-        # '''Haciendo las búsqueda en google'''
-        # driver.get('https://www.google.com/search?q={}'.format(movie))
-
-    
-        # WebDriverWait(driver, 10).until(
-        #     EC.presence_of_element_located((By.XPATH, '//*[@class="yuRUbf"]'))
-
-        # )
-
-        # links = driver.find_elements(By.XPATH,'//*[@class="yuRUbf"]/a')
-        # link_imdb = links[0].get_attribute('href')
-        # driver.get(link_imdb)
-        # sleep(3)
-        
-        # '''Sacando la info de la película'''
-
-
-        # ## género
-        # WebDriverWait(driver, 10).until(
-        #     EC.presence_of_element_located((By.XPATH, "//*[contains(@class, 'ipc-chip ipc-chip--on-baseAlt')]"))
-
-        # )
-        # ## generos
-        # generos = driver.find_elements(By.XPATH,"//*[contains(@class, 'ipc-chip ipc-chip--on-baseAlt')]")
-        # for genero in generos:
-        #     print(genero.text)
-
-        # ## dirección
-        # direccion = driver.find_elements(By.XPATH,
-        # "//*[@class, 'ipc-inline-list ipc-inline-list--show-dividers ipc-inline-list--inline ipc-metadata-list-item__list-content base')]/li")
-        
-
     def dbPelis(self):
         pass
 
@@ -204,7 +156,7 @@ for pelicula,año in lista.items():
          print('No se pudo descargar la info de {}'.format(pelicula))
          continue
 
-with open('files/data1.json', 'w') as fp:
+with open('Application/files/mis_peliculas.json', 'w') as fp:
     json.dump(coleccion_pelis, fp)
 
 #peli.peliScraper('Memento',1,'2000')
