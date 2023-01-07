@@ -41,7 +41,7 @@ class Admon_bd():
 
     def find_(self,documento):
         try:
-            cliente = pymongo.MongoClient(self.conn_str, serverSelectionTimeoutMS=5000)
+            cliente = pymongo.MongoClient(self.conn_str, serverSelectionTimeoutMS=10000)
             cliente.server_info()
             baseDatos=cliente[self.MONGO_BASEDATOS]
             coleccion=baseDatos[self.MONGO_COLECCION]
@@ -59,6 +59,19 @@ class Admon_bd():
             print("Tiempo exedido "+errorTiempo)
 
 
+    def insertar_muchos(self,documentos):
+        try:
+            cliente = pymongo.MongoClient(self.conn_str, serverSelectionTimeoutMS=5000)
+            cliente.server_info()
+            baseDatos=cliente[self.MONGO_BASEDATOS]
+            coleccion=baseDatos[self.MONGO_COLECCION]
+            coleccion.insert_many(documentos)
+            print("Inserción a mongo exitosa")
+            cliente.close()
+        except pymongo.errors.ServerSelectionTimeoutError as errorTiempo:
+            print("Tiempo exedido "+errorTiempo)
 
 
 
+##https://stackoverflow.com/questions/12191311/mongodb-avoid-duplicate-entries
+##https://stackoverflow.com/questions/24122981/how-to-stop-insertion-of-duplicate-documents-in-a-mongodb-collection

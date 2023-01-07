@@ -5,8 +5,14 @@ WindowManager:
     LoginPage:
         id:login_screen
         name: 'login_page'
+    FirstWindow:
+        name: 'firstwindow'
+
 
 <LoginPage>:
+    username: User
+    password: Pass
+    login_cb: login_cb
     MDTextField:
         id: User
         hint_text: "Username"
@@ -21,3 +27,60 @@ WindowManager:
         icon_right: "key"
         password: True
         cursor_color: 0,0,0,1
+    MDLabel:
+        text: "Remember me"
+        size_hint: 0.5,0.06
+        pos_hint:{"x":0.35,"y":0.47}
+
+    RightCheckbox:
+        id: login_cb
+        #active: True
+        size_hint:0.055, 0.055
+        pos_hint: {"x": 0.68, "center_y": 0.5}
+        on_press:
+            root.remember_me()
+
+    MDFillRoundFlatButton:
+        id:login_button
+        text: "Login"
+        size_hint: 0.5, 0.06
+        pos_hint: {"center_x": 0.5, "center_y": 0.35}
+        on_release:
+            app.login()
+
+
+            
+<FirstWindow>:
+#    MDToolbar:
+#        id: toolbar
+#        title: "Our Swiper App"
+#        elevation: 10
+#        pos_hint: {"top": 1}
+#    MDSwiper:
+#        id: swiper
+#        size_hint_y: None
+#        height: root.height - toolbar.height - dp(40)
+#        y: root.height - self.height - toolbar.height - dp(20)
+#
+#        on_swipe:
+#        on_pre_swipe:
+#        on_overswipe_right:
+#        on_overswipe_left:
+#        on_swipe_left: app.on_swipe_left()
+#        on_swipe_right: app.on_swipe_right()
+#
+#
+#        MySwiper:
+#            FitImage:
+#                id: fitImage_1
+#                source: "descarga.jfif"
+#                radius: [20,]
+#
+#        MySwiper:
+#            FitImage:
+#                id: fitImage_2
+#                source: "images.jfif"
+#                radius: [20,]
+
+
+ 
