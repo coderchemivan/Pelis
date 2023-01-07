@@ -1,4 +1,4 @@
-## Primera etapa 
+## Primera etapa (actual)
 
 Hacer web scraping a la página de IMDB para obtener miles de títulos con su respectiva informacion y guardar esos datos en una base de datos no relacional (MongoDB).
 
