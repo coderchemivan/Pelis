@@ -169,7 +169,7 @@ class Peliculas (CrawlSpider):
     'USER_AGENT': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/71.0.3578.80 Chrome/71.0.3578.80 Safari/537.36',
     'CLOSESPIDER_PAGECOUNT': 1000,
     'FEEDS' :  {
-    'dashboard/mis_pelis.json' : {
+    'files/mis_pelis.json' : {
         'format': 'json'
             }
         }         
@@ -209,14 +209,16 @@ def main():
     duration = 1000  # milliseconds
     freq = 440  # Hz
     #abrir el doc mis_pelis.json y pasar la info a una lista de diccionarios
-    with open('dashboard/mis_pelis.json') as json_file:
+    with open('files/mis_pelis.json') as json_file:
         data = json.load(json_file)
         film_rows = []
         for p in data:
             film_rows.append(p)
     print(film_rows)
     MongoDB_admin(password='bleistift16',db='movies',collection='watched').db_connect(film_rows) 
-    winsound.Beep(freq, duration)    
+    winsound.Beep(freq, duration)
+    os.remove('files/mis_pelis.json')
+
 
 if __name__ == '__main__':
     main()
