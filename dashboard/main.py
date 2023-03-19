@@ -1,13 +1,9 @@
-
 from bs4 import BeautifulSoup
 import requests
 from tqdm import tqdm
 import numpy as np
 from pymongo import MongoClient
-from dotenv import load_dotenv, find_dotenv
 import os
-import pprint
-import dns
 import scrapy
 from scrapy.item import Field
 from scrapy.item import Item
@@ -61,7 +57,7 @@ class Letterboxd_user_scraper():
 
                 # finding the film name
                 panel = film.find('div').find('img')
-                #film_name = panel['alt']
+                film_name = panel['alt']
 
                 # movie id
 
@@ -100,14 +96,14 @@ class Letterboxd_user_scraper():
                 #     average_rating = np.nan
 
                 #film_rows.append([film_name, release_year, director, cast, rating, average_rating, _domain+film_card])
-                #film_info['film_name'] = film_name
+                film_info['film_name'] = film_name
                 film_info['tmdb_id'] = movie_id
                 #film_info['release_year'] = release_year
                 #film_info['director'] = director
                 #film_info['cast'] = cast
                 film_info['rating'] = rating
                 #film_info['average_rating'] = average_rating
-                #film_info['film_page'] = _domain+film_card
+                film_info['film_page'] = _domain+film_card
                 #film_info['año'] = 0
                 film_rows.append(film_info)
 
@@ -163,11 +159,9 @@ class MongoDB_admin():
             db.create_collection(self.collection)
             col = self.collection
             #create index con los campos de nombre y año
-            db[col].create_index([('film_name',1),('release_year',1)],unique=True)
+            db[col].create_index([('titulo',1),('año',1)],unique=True)
         self.collection = db[self.collection]
-        self.collection.insert_many(documents)
-
-
+        self.collection.insert_many(documents,ordered=False)
 
 class Peliculas (CrawlSpider):
     name = "Imdb titles"
@@ -214,22 +208,23 @@ def main():
     process.start()
     duration = 1000  # milliseconds
     freq = 440  # Hz
-    #abrir el doc data.txt y pasar la info a una lista de diccionarios
-    with open('files/data.txt') as json_file:
+    #abrir el doc mis_pelis.json y pasar la info a una lista de diccionarios
+    with open('dashboard/mis_pelis.json') as json_file:
         data = json.load(json_file)
         film_rows = []
         for p in data:
             film_rows.append(p)
+    print(film_rows)
     MongoDB_admin(password='bleistift16',db='movies',collection='watched').db_connect(film_rows) 
     winsound.Beep(freq, duration)    
 
 if __name__ == '__main__':
-   main()
+    main()
 
 
 #mis_pelis = Letterboxd_user_scraper(username='chemivan').scrape_list()
 
-#MongoDB_admin(password='bleistift16',db='movies',collection='watched').insert_documents(mis_pelis)
+#MongoDB_admin(password='bleistift16',db='movies',collection='watched').db_connect([{'film_name': 'All the Places', 'año':2023, 'rating': 2.5}])
 
 
 
