@@ -3,6 +3,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'DBM')))
 
 import requests
+import scrapy
 from scrapy.item import Field
 from scrapy.item import Item
 from scrapy.spiders import CrawlSpider, Rule
@@ -17,8 +18,8 @@ import re
 from datetime import datetime
 from datetime import timedelta
 import random
-
-#from get_user_movies import MongoDB_admin
+import json
+from get_user_movies import MongoDB_admin
 
 
 
@@ -29,11 +30,20 @@ class IMDB (CrawlSpider):
     'USER_AGENT': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/71.0.3578.80 Chrome/71.0.3578.80 Safari/537.36',
     'CLOSESPIDER_PAGECOUNT': 30000,    
     'FEEDS' :  {
-    'files/mis_pelis_data.json' : {
+    'files/mis_pelis_data_.json' : {
         'format': 'json'
             }
-        }        
-    }
+        } ,
+    #'ITEM_PIPELINES': {"scrapy.pipelines.images.ImagesPipeline": 1},
+    #'IMAGES_STORE' : "files/posters",
+    # 'PROXY_POOL_ENABLED' : True,
+    # 'DOWNLOADER_MIDDLEWARES' : {
+    # # ...
+    # 'scrapy_proxy_pool.middlewares.ProxyPoolMiddleware': 610,
+    # 'scrapy_proxy_pool.middlewares.BanDetectionMiddleware': 620,
+    # # ...
+    }           
+    
 
     allowed_domains = ['imdb.com']
 
@@ -41,21 +51,32 @@ class IMDB (CrawlSpider):
     #generar una lista de urls con los titulos de las peliculas del archivo files/titulos.txt
 
 
-    with open('files/titulos.txt','r') as f:
-        urls = f.readlines()
-        start_urls = [f'https://www.google.com/search?q={url.strip()} imdb' for url in urls]
+    # with open('files/titulos.txt','r') as f:
+    #     urls = f.readlines()
+    #     #start_urls = [f'https://www.google.com/search?q={url.strip()} imdb' for url in urls]
  
-    
-    download_delay = 3
+    with open('files/mis_pelis.json') as f:
+        data = json.load(f)
+        start_urls = [f'https://www.imdb.com/title/{movie["imdb_id"]}/' for movie in data]
 
-    rules = (
-        Rule(#Detalle de películas
-            LinkExtractor(
-                allow =r'/title/tt\d+',
-                restrict_xpaths=["//div[1][@class='yuRUbf']//a[1][not(contains(@href, 'fullcredits')) and contains(@href,'title/tt') and string-length(@href) <= 40]"]
-            ), follow=True,callback='parse_titles'),
-        )
-    
+
+
+
+        download_delay = 2
+
+    # rules = (
+    #     Rule(#Detalle de películas
+    #         LinkExtractor(
+    #             allow =r'/title/tt\d+',
+    #             restrict_xpaths=["//div[1][@class='yuRUbf']//a[1][not(contains(@href, 'fullcredits')) and contains(@href,'title/tt') and string-length(@href) <= 40]"]
+    #         ), follow=True,callback='parse_titles'),
+    #     )
+
+    def start_requests(self):
+        for url in self.start_urls:
+            yield scrapy.Request(url=url, callback=self.parse_titles, dont_filter=True)    
+
+
     def parse_titles(self, response):
         sel  = Selector(response)
 
@@ -65,7 +86,9 @@ class IMDB (CrawlSpider):
 
         titulo = ''
         try:
-            titulo = sel.xpath('//*[@data-testid="hero-title-block__original-title"]/text()')[0].get()
+            titulo = sel.xpath("//meta[@property='og:title']/@content").get()
+            titulo, year = titulo.split(" (")
+            year = re.findall(r'(\d+)',year)[0] 
             
         except:
             try:
@@ -84,18 +107,10 @@ class IMDB (CrawlSpider):
 
         '''rating'''
         try:
-            rating = sel.xpath("//*[@class='sc-e457ee34-1 gvYTvP']/text()")[0].get()
+            rating = sel.xpath("//div[@data-testid='hero-rating-bar__aggregate-rating__score']/span[1]/text()")[0].get()
             
         except:
             rating = "ND"
-
-        '''year'''
-        try:
-            year = sel.xpath("//ul[@data-testid='hero-title-block__metadata']//span/text()")[0].get()
-            
-        except:
-            year = "ND"
-
 
         '''durcion'''
         try:
@@ -188,17 +203,22 @@ class IMDB (CrawlSpider):
             match = re.search(regex_pais, release_date_country_original)
             pais_estreno = match.group(1)
             
-
+        
         except Exception as e:
             release_date = "ND"
             pais_estreno = "ND"
 
+        '''poster'''
+        poster_url = sel.xpath("//meta[@property='og:image']/@content").getall()[0]
+        name = titulo
+        with open(f'files/posters/{name}.jpg', 'wb') as f:
+            f.write(requests.get(poster_url).content)          
 
         yield {
                 'titulo': titulo,
                 'generos': genres_list,
                 'rating': rating,
-                'año': year,
+                'year': year,
                 'duracion': duracion,
                 'budget': budget,
                 'recaudacion_mundial': recaudacion,
@@ -209,7 +229,8 @@ class IMDB (CrawlSpider):
                 'idiomas': languages,
                 'países de origen': country,
                 'fecha_de_estreno': release_date,
-                'pais_estreno': pais_estreno
+                'pais_estreno': pais_estreno,
+                'image_urls': poster_url,
         }
 
 #scrapy runspider extraccion_peliculas.py -o files/titulos1.json -t json
@@ -230,10 +251,3 @@ get_user_movies()
 
 
 
-# watched_movies = MongoDB_admin(password='bleistift16',db='movies',collection='watched',usuario ='chemivan').get_documents()
-# for movie in watched_movies :
-#     #añadir titulo. año y rating a un .txt
-#     with open('files/titulos.txt','a') as f:
-#         f.write(movie['titulo']+' '+movie['año']+'\n')
-        
-       

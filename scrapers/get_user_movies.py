@@ -18,8 +18,9 @@ from scrapy.crawler import CrawlerProcess
 from scrapy.linkextractors import LinkExtractor
 import winsound
 import json
+import re
 
-
+from get_user_movies import MongoDB_admin
 
 class Letterboxd_user_scraper():
     def __init__(self,username,ejecutar=False):
@@ -59,7 +60,7 @@ class Letterboxd_user_scraper():
                 # iterate through films
                 for film in tqdm(films):
                     film_info = {}
-                    
+                
                     #attributes of the film
                     info_movie = film.find('div').attrs
 
@@ -68,7 +69,6 @@ class Letterboxd_user_scraper():
                     film_name = panel['alt']
 
                     # movie id
-
                     movie_id = info_movie['data-film-id']
                     
                     # try to find the rating of a film if possible and converting to float
@@ -76,8 +76,11 @@ class Letterboxd_user_scraper():
                         stars = film.find('span', class_='rating').get_text().strip()
                         rating = self.transform_stars(stars)
                     except:
-                        rating = np.nan
+                        rating = 0
                     
+                    #Like button
+                    like = True if len(film.find_all('span', class_='like has-icon icon-liked icon-16')) > 0 else False                
+
                     # Obtaining release year, director, cast and average rating of the movie
                     film_card = film.find('div').get('data-target-link')
                     film_page = _domain + film_card
@@ -105,13 +108,13 @@ class Letterboxd_user_scraper():
 
                     #film_rows.append([film_name, release_year, director, cast, rating, average_rating, _domain+film_card])
                     film_info['film_name'] = film_name
-                    film_info['tmdb_id'] = movie_id
                     #film_info['release_year'] = release_year
                     #film_info['director'] = director
                     #film_info['cast'] = cast
                     film_info['rating'] = rating
                     #film_info['average_rating'] = average_rating
                     film_info['film_page'] = _domain+film_card
+                    film_info['liked'] = like
                     #film_info['año'] = 0
                     film_rows.append(film_info)
 
@@ -125,7 +128,7 @@ class Letterboxd_user_scraper():
                     list_link = _domain + next_button['href']
             #escribir el dicc en un archivo txt
             if os.path.exists('files/data.txt'):
-                os.remove('files/data.txt')   
+               os.remove('files/data.txt')   
             with open('files/data.txt', 'a') as outfile:
                 json.dump(film_rows, outfile)
             return film_rows
@@ -165,7 +168,7 @@ class Peliculas (CrawlSpider):
     'files/mis_pelis.json' : {
         'format': 'json'
             }
-        }         
+        }
     }
 
     allowed_domains = ['letterboxd.com']
@@ -183,17 +186,31 @@ class Peliculas (CrawlSpider):
         info = {}
         titulo = sel.xpath("//*[@id='featured-film-header']/h1/text()")[0].get()
         año = sel.xpath("//*[@id='featured-film-header']//a[contains(@href, 'year')]/text()")[0].get()
+        directores = sel.xpath("//*[@id='featured-film-header']/p/a/span/text()").getall()
+        imdb_id = sel.xpath("//p[@class='text-link text-footer']/a[contains(@href, 'imdb')]/@href").get()
+        imdb_id = re.findall(r'tt\d+', imdb_id)[0]
+        tmdb_id = sel.xpath("//p[@class='text-link text-footer']/a[contains(@href, 'themoviedb')]/@href").get()
+        tmdb_id = re.findall(r'movie/(\d+)', tmdb_id)[0]
+        #image_url = sel.xpath("//div[@id='poster-large']//img/@src").getall()
+        
         with open('files/data.txt') as json_file:
             data = json.load(json_file)
             for p in data:
                 if p['film_name'] == titulo:
                     rating = p['rating']
+                    liked = p['liked']
                     break
         yield {
                 'titulo': titulo,
                 'año': año,
+                'directores': directores,
                 'rating': rating,
-                'usuario': self.usuario
+                'usuario': self.usuario,
+                'imdb_id': imdb_id,
+                'tmdb_id': tmdb_id,
+                'liked': liked,
+                #'image_urls':image_url
+
         }
         
 def get_user_movies():
@@ -213,12 +230,12 @@ def get_user_movies():
             film_rows.append(p)
     MongoDB_admin(password='bleistift16',db='movies',collection='watched').insert_documents(film_rows) 
     winsound.Beep(freq, duration)
-    
-   
-
-
 #get_user_movies()
 
-#v = MongoDB_admin(password='bleistift16',db='movies',collection='watched').get_documents()
 
+
+        
+       
+        
+       
 
