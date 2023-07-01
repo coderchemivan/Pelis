@@ -15,13 +15,78 @@ from scrapy.item import Field
 from scrapy.item import Item
 from scrapy.spiders import CrawlSpider, Rule
 from scrapy.selector import Selector
+import scrapy.crawler as crawler
 from scrapy.crawler import CrawlerProcess
 from scrapy.linkextractors import LinkExtractor
+from scrapy.utils.log import configure_logging
+from multiprocessing import Process, Queue
+from twisted.internet import reactor
 import winsound
 import json
 import re
 
 from get_user_movies import MongoDB_admin
+
+
+
+
+class VistasEn (CrawlSpider):
+    
+    name = "Imdb titles"
+    custom_settings = {
+    'USER_AGENT': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/71.0.3578.80 Chrome/71.0.3578.80 Safari/537.36',
+    'CLOSESPIDER_PAGECOUNT': 30000,    
+    'FEEDS' :  {
+    'files/vistas_en.json' : {
+        'format': 'json'
+            }
+        } ,
+    }           
+    
+
+    allowed_domains = ['letterboxd.com']
+    start_urls = [f'https://letterboxd.com/chemivan/films/diary/']
+    
+
+
+    rules = (
+        Rule(#Paginación de peliculas
+            LinkExtractor(
+                allow=r'page'
+            ), follow=True),
+
+        
+        Rule(#Detalle de películas
+            LinkExtractor(
+                restrict_xpaths=["//td[@class='td-film-details']//h3/a"]
+            ), follow=True,callback='parse_titles'),
+        )
+    
+    def parse_titles(self, response):
+        sel  = Selector(response)
+        titulo = sel.xpath("//span[@class='film-title-wrapper']/a/text()").get()
+        fecha_vista = sel.xpath('//*[@id="content"]//meta/@content').get()
+        film_page = sel.xpath("//span[@class='film-title-wrapper']/a/@href").get()
+
+
+        yield {
+                'titulo': titulo,
+                'fecha_vista': fecha_vista,
+                'film_page': film_page,
+        }
+
+
+def get_user_movies_watch_date():
+    process = CrawlerProcess()
+    process.crawl(VistasEn)
+    process.start()
+
+
+
+
+
+
+
 
 class Letterboxd_user_scraper():
     def __init__(self,username,ejecutar=False):
@@ -176,8 +241,12 @@ class Peliculas (CrawlSpider):
     #download_delay = 1
 
     films = Letterboxd_user_scraper(username='chemivan',ejecutar=True).scrape_list()
+    peliculas_existentes = MongoDB_admin(password='bleistift16',db='movies',collection='watched').verificar_peliculas_existentes()
+    peliculas_nuevas = []
+    for k,v in enumerate(films):
+        if v['film_page'] not in peliculas_existentes:
+            peliculas_nuevas.append(v['film_page'])
     start_urls = [film['film_page'] for film in films]
-
     def start_requests(self):
         for url in self.start_urls:
             yield scrapy.Request(url=url, callback=self.parse, dont_filter=True)
@@ -186,14 +255,35 @@ class Peliculas (CrawlSpider):
         sel  = Selector(response)
         info = {}
         titulo = sel.xpath("//*[@id='featured-film-header']/h1/text()")[0].get()
-        año = sel.xpath("//*[@id='featured-film-header']//a[contains(@href, 'year')]/text()")[0].get()
-        directores = sel.xpath("//*[@id='featured-film-header']/p/a/span/text()").getall()
-        imdb_id = sel.xpath("//p[@class='text-link text-footer']/a[contains(@href, 'imdb')]/@href").get()
-        imdb_id = re.findall(r'tt\d+', imdb_id)[0]
-        tmdb_id = sel.xpath("//p[@class='text-link text-footer']/a[contains(@href, 'themoviedb')]/@href").get()
-        tmdb_id = re.findall(r'movie/(\d+)', tmdb_id)[0]
-        film_page = sel.xpath("//div[@id='tabbed-content']//li/a/@href")[1].get()
-        film_page = re.findall(r'(film/.+)/(details|crew|releases|genres)', film_page)[0][0]
+        if titulo == 'It':
+            print('hola')
+        try:
+            año = sel.xpath("//*[@id='featured-film-header']//a[contains(@href, 'year')]/text()")[0].get()
+        except:
+            año = 'ND'
+
+        try:
+            directores = sel.xpath("//*[@id='featured-film-header']/p/a/span/text()").getall()
+        except:
+            directores = 'ND'
+
+        try:
+            imdb_id = sel.xpath("//p[@class='text-link text-footer']/a[contains(@href, 'imdb')]/@href").get()
+            imdb_id = re.findall(r'tt\d+', imdb_id)[0]
+        except:
+            imdb_id = 'ND'
+        
+        try:
+            tmdb_id = sel.xpath("//p[@class='text-link text-footer']/a[contains(@href, 'themoviedb')]/@href").get()
+            tmdb_id = re.findall(r'movie/(\d+)', tmdb_id)[0]
+        except:
+            tmdb_id = 'ND'
+
+        try:
+            film_page = sel.xpath("//div[@id='tabbed-content']//li/a/@href")[1].get()
+            film_page = re.findall(r'(film/.+)/(details|crew|releases|genres)', film_page)[0][0]
+        except:
+            film_page = 'ND'
         #image_url = sel.xpath("//div[@id='poster-large']//img/@src").getall()
         with open('files/data.txt') as json_file:
             data = json.load(json_file)
@@ -224,14 +314,14 @@ class Peliculas (CrawlSpider):
                 'tmdb_id': tmdb_id,
                 'liked': liked,
                 'vista_en': vista_en,
+                'film_page': f'/{film_page}/',
                 
 
         }
         
 def get_user_movies():
     #eliminar data.txt si existe
-    if os.path.exists('files/mis_pelis.json'):
-        os.remove('files/mis_pelis.json')     
+
     process = CrawlerProcess()
     process.crawl(Peliculas,usuario='chemivan')
     process.start()
@@ -243,14 +333,29 @@ def get_user_movies():
         film_rows = []
         for p in data:
             film_rows.append(p)
-    MongoDB_admin(password='bleistift16',db='movies',collection='watched').insert_documents(film_rows) 
+    #MongoDB_admin(password='bleistift16',db='movies',collection='watched').insert_documents(film_rows) 
     winsound.Beep(freq, duration)
+
+
+
+
+
+
+
+
+
+
+
+if os.path.exists('files/vistas_en.json'):
+    os.remove('files/vistas_en.json')   
+
+if os.path.exists('files/mis_pelis.json'):
+    os.remove('files/mis_pelis.json')   
+get_user_movies_watch_date()  
 get_user_movies()
 
 
 
-        
-       
         
        
 
