@@ -57,12 +57,12 @@ class IMDB (CrawlSpider):
  
     with open('files/mis_pelis.json') as f:
         data = json.load(f)
-        start_urls = [f'https://www.imdb.com/title/{movie["imdb_id"]}/' for movie in data]
+        start_urls = [f'https://www.imdb.com/title/{movie["imdb_id"]}/' for movie in data][100:]
 
 
 
 
-        download_delay = 2
+        download_delay = 0.5
 
     # rules = (
     #     Rule(#Detalle de películas
@@ -227,7 +227,7 @@ class IMDB (CrawlSpider):
                 'escritor': writer,
                 'casas_productoras': production_companies,
                 'idiomas': languages,
-                'países de origen': country,
+                'países_de_origen': country,
                 'fecha_de_estreno': release_date,
                 'pais_estreno': pais_estreno,
                 'image_urls': poster_url,
@@ -241,7 +241,15 @@ def get_user_movies():
     process = CrawlerProcess()
     process.crawl(IMDB)
     process.start()
-
+    with open('files/mis_pelis_data_.json') as json_file:
+        data = json.load(json_file)
+        film_rows = []
+        for p in data:
+            film_rows.append(p)
+        print(len(film_rows))
+    MongoDB_admin(password='bleistift16',db='movies',collection='movies',movies_usuario=False).insert_documents(film_rows) 
+            
+       
 
 
 get_user_movies()
