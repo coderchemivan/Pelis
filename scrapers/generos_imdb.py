@@ -1,10 +1,11 @@
 from bs4 import BeautifulSoup
 import requests
 
-r = requests.get('https://www.imdb.com/feature/genre/')
-soup = BeautifulSoup(r.text,'lxml')
+r = requests.get('https://www.imdb.com/feature/genre')
+soup = BeautifulSoup(r.content, 'html.parser')
 
-generos = soup.find_all('div',attrs={'class':'table-cell primary'})[0:24]
+generos = soup.find_all('section', class_='ipc-page-section ipc-page-section--base')
+generos = generos.find_all('div',attrs={'class':'ipc-chip ipc-chip--on-base-accent2'})
 generos = ['https://www.imdb.com/' + genero.find('a').get('href') for genero in generos]
 
 
