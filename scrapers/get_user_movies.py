@@ -5,6 +5,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..',
 
 from bs4 import BeautifulSoup
 import requests
+from lxml import etree
 from tqdm import tqdm
 import numpy as np
 from DBM import MongoDB_admin
@@ -191,15 +192,28 @@ class Peliculas (CrawlSpider):
         imdb_id = re.findall(r'tt\d+', imdb_id)[0]
         tmdb_id = sel.xpath("//p[@class='text-link text-footer']/a[contains(@href, 'themoviedb')]/@href").get()
         tmdb_id = re.findall(r'movie/(\d+)', tmdb_id)[0]
+        film_page = sel.xpath("//div[@id='tabbed-content']//li/a/@href")[1].get()
+        film_page = re.findall(r'(film/.+)/(details|crew|releases|genres)', film_page)[0][0]
         #image_url = sel.xpath("//div[@id='poster-large']//img/@src").getall()
-        
         with open('files/data.txt') as json_file:
             data = json.load(json_file)
             for p in data:
-                if p['film_name'] == titulo:
+                print(f'https://letterboxd.com//{film_page}'  ,   p['film_page'])
+                if p['film_page'] == f'https://letterboxd.com//{film_page}/':
                     rating = p['rating']
                     liked = p['liked']
+                    pagina = p['film_page']
                     break
+
+        with open('files/vistas_en.json') as json_file:
+            data = json.load(json_file) 
+            for p in data:
+                print(f'/{film_page}/'  ,   p['film_page'])
+                if p['film_page'] == f'/{film_page}/':
+                    vista_en = p['fecha_vista']
+                    break
+
+
         yield {
                 'titulo': titulo,
                 'año': año,
@@ -209,7 +223,8 @@ class Peliculas (CrawlSpider):
                 'imdb_id': imdb_id,
                 'tmdb_id': tmdb_id,
                 'liked': liked,
-                #'image_urls':image_url
+                'vista_en': vista_en,
+                
 
         }
         
@@ -230,7 +245,7 @@ def get_user_movies():
             film_rows.append(p)
     MongoDB_admin(password='bleistift16',db='movies',collection='watched').insert_documents(film_rows) 
     winsound.Beep(freq, duration)
-#get_user_movies()
+get_user_movies()
 
 
 
