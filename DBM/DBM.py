@@ -33,14 +33,19 @@ class MongoDB_admin():
         self.collection = db[self.collection]
         return self.collection.find({campo:valor})
     
-    def verificar_peliculas_existentes(self):
+    def verificar_peliculas_existentes(self,campo=None,pagina='letterboxd'):
         connection_string = f"mongodb+srv://coderchemivan:{self.password}@cluster0.mp5mmin.mongodb.net/?retryWrites=true&w=majority"
         client = MongoClient(connection_string)
         db = client[self.db]
         self.collection = db[self.collection]
-        domain = 'https://letterboxd.com/'
-        lista = [domain + film for film in self.collection.distinct('film_page')]
+        domain = 'https://letterboxd.com/' if pagina=='letterboxd' else 'https://www.imdb.com/title/'
+        lista = [domain + film for film in self.collection.distinct(campo)]
         return lista
-    
-#c =MongoDB_admin(password='bleistift16',db='movies',collection='watched').verificar_peliculas_existentes()
-#print(c)
+
+    def delete(self,campo,valores):
+        connection_string = f"mongodb+srv://coderchemivan:{self.password}@cluster0.mp5mmin.mongodb.net/?retryWrites=true&w=majority"
+        client = MongoClient(connection_string)
+        db = client[self.db]
+        self.collection = db[self.collection]
+        self.collection.delete_many({campo:{'$in':valores}})
+
